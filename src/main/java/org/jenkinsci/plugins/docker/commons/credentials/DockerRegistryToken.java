@@ -93,23 +93,10 @@ public final class DockerRegistryToken implements Serializable {
                 synchronized (DockerRegistryToken.class) {// feeble attempt at serializing access to ~/.dockercfg
 
                     File config = new File(System.getProperty("user.home"), ".docker/config.json");
-                    if (config.exists()) {
-                        json = JSONObject.fromObject(FileUtils.readFileToString(config, "UTF-8"));
-                        auths = json.getJSONObject("auths");
-                    } else {
-                        config = new File(System.getProperty("user.home"), ".dockercfg");
-                        if (config.exists()) {
-                            auths = json = JSONObject.fromObject(FileUtils.readFileToString(config, "UTF-8"));
-                        } else {
-                            // Use legacy .dockercfg to ensure this works well with pre-1.7 docker client
-                            // client will pick this one if .docker/config.json does not yet exists
-                            auths = json = new JSONObject();
-                        }
-                    }
-                    auths.put(endpoint.toString(), new JSONObject()
-                            .accumulate("auth", getToken())
-                            .accumulate("email", getEmail()));
-                    
+                    json = new JSONObject();
+                    json.put("auths", new JSONObject()
+                             .accumulate(endpoint.toString(), new JSONObject()
+                                  .accumulate("auth", getToken())));
                     FileUtils.writeStringToFile(config, json.toString(2), "UTF-8");
                     listener.getLogger().println("Wrote authentication to " + config);
                 }
